@@ -1,0 +1,540 @@
+Program 1.Start by reviewing HDFS. You will find that its composition is similar to your local Linux file
+  system. You will use the hadoop fs command when interacting with HDFS.
+  • Review the commands available for the Hadoop Distributed File System:
+  • Copy file foo.txt from local disk to the user’s directory in HDFS
+  • Get a directory listing of the user’s home directory in HDFS
+  • Get a directory listing of the HDFS root directory
+  • Display the contents of the HDFS file  /user/cloudera/fred/bar.txt
+
+
+Step 1:  Review the commands for HDFS
+
+       $ sudo /home/cloudera/cloudera-manager --force --express
+
+       $ sudo jps |grep Node
+
+       $ hadoop fs
+
+           or
+
+       $ hdfs dfs               
+
+
+Step 2 : Copy file foo.txt from local disk to user’s directory in HDFS
+         first create file foo.txt
+
+         $ vi foo.txt
+
+Step 3: Copy the file foo.txt from  current working directory to user
+directory in HDFS, use the
+
+        $  hadoop fs -put foo.txt  /user/cloudera
+
+
+Step 4 : Get a directory listing of the user’s Home directory in HDFS
+
+        $ hadoop fs -ls /user/cloudera
+
+
+Step 5: Get a directory listing of the HDFS root directory
+
+        $ hadoop fs -ls  /
+
+Step 6: Display the contents of the HDFS file  /user/cloudera/fred/bar.txt
+
+        $ hadoop fs -mkdir /user/cloudera/fred
+
+        $ vi bar.txt
+
+        $ hadoop fs -put  bar.txt /user/cloudera/fred
+
+        $ hadoop fs -cat /user/cloudera/fred/bar.txt
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Program 2. Start by reviewing HDFS. You will find that its composition is similar to your local Linux file
+system. You will use the hadoop fs command when interacting with HDFS.
+
+• Move that file to the local disk, named as baz.txt
+• Create a directory called input under the user’s home directory
+• Delete the directory input old and all its contents
+• Verify the copy by listing the directory contents in HDFS.
+• Move the file to the local disk named as baz.txt
+
+
+Step 1:  Move that file to the local disk, named as baz.txt
+
+        $ hadoop fs -get /user/cloudera/fred/bar.txt baz.txt
+
+
+Step 2 : Create a directory called input under the user’s home directory
+
+        $ hadoop fs -mkdir /user/cloudera/input
+
+        $ hadoop fs -ls /user/cloudera
+
+Step 3: Delete the directory input old and all its contents
+
+        $ hadoop fs -rm -r /user/cloudera/input
+
+
+Step 4 :Verify the copy by listing the directory contents in HDFS.     
+
+        $ hadoop fs -ls /user/cloudera
+
+
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+
+Program 3. Demonstrate word count on an input file using MapReduce program.
+
+
+import java.io.IOException;
+import java.util.StringTokenizer;
+
+ 
+
+import org.apache.hadoop.conf.Configuration;
+
+import org.apache.hadoop.fs.Path;
+
+import org.apache.hadoop.io.IntWritable;
+
+import org.apache.hadoop.io.Text;
+
+import org.apache.hadoop.mapreduce.Job;
+
+import org.apache.hadoop.mapreduce.Mapper;
+
+import org.apache.hadoop.mapreduce.Reducer;
+
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+ 
+
+public class WordCount {
+
+ 
+
+  public static class TokenizerMapper
+
+       extends Mapper<Object, Text, Text, IntWritable>{
+
+ 
+
+    private final static IntWritable one = new IntWritable(1);
+
+    private Text word = new Text();
+
+ 
+
+    public void map(Object key, Text value, Context context
+
+                    ) throws IOException, InterruptedException {
+
+      StringTokenizer itr = new StringTokenizer(value.toString());
+
+      while (itr.hasMoreTokens()) {
+
+        word.set(itr.nextToken());
+
+        context.write(word, one);
+
+      }
+
+    }
+
+  }
+
+ 
+
+  public static class IntSumReducer
+
+       extends Reducer<Text,IntWritable,Text,IntWritable> {
+
+    private IntWritable result = new IntWritable();
+
+ 
+
+    public void reduce(Text key, Iterable<IntWritable> values,
+
+                       Context context
+
+                       ) throws IOException, InterruptedException {
+
+      int sum = 0;
+
+      for (IntWritable val : values) {
+
+        sum += val.get();
+
+      }
+
+      result.set(sum);
+
+      context.write(key, result);
+
+    }
+
+  }
+
+ 
+
+  public static void main(String[] args) throws Exception {
+
+    Configuration conf = new Configuration();
+
+    Job job = Job.getInstance(conf, "word count");
+
+    job.setJarByClass(WordCount.class);
+
+    job.setMapperClass(TokenizerMapper.class);
+
+    job.setCombinerClass(IntSumReducer.class);
+
+    job.setReducerClass(IntSumReducer.class);
+
+    job.setOutputKeyClass(Text.class);
+
+    job.setOutputValueClass(IntWritable.class);
+
+    FileInputFormat.addInputPath(job, new Path(args[0]));
+
+    FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
+    System.exit(job.waitForCompletion(true) ? 0 : 1);
+
+  }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Program 4. Using movie ratings data, Develop the queries in Hive for the following-
+
+a.                List all the Users who have rated the movies (Users who have rated at least one movie)
+
+b.                List of all the User with the max, min, average ratings they have given against any movie
+
+c.                List all the Movies with the max, min, average ratings given by any user
+
+ 
+
+ 
+
+Step1: Create a text file moviedetail in the root directory, type the data in the file. Then move the file to the HDFS directory in path user/cloudera/hivedata and verify the  file has been copied.
+
+$vi moviedetail
+
+custId       movieId    activity           genreId  recommended     time                          rating      price     position
+1111008   1                    1                       5             Y                            12-3-201612:12:12      1         Null         Null
+1111119   2                    4                       1             N                           11-2-200011:33:44      5         Null         Null
+1212210   6                    9                       7             Y            04-2-200012:44:44      Null    Null         Null
+2111008   1                    1                       5             Y                             12-3-201612:12:12     3         Null        Null
+1511119   2                    4                       1            N                             11-2-200011:33:44     Null    Null       Null
+1612210   6                    9                       7             Y             04-2-200012:44:44     4         Null       Null
+
+
+$ hadoop fs -mkdir /user/cloudera/hivedata
+
+$ hadoop fs -put moviedetail /user/cloudera/hivedata
+
+$ hadoop fs -ls  /user/cloudera/hivedata
+
+
+Step2: Launch hive command line shell, create database moviework and
+create a table.
+
+$ hive
+
+$ create database moviework;
+
+$ use moviework;
+
+ 
+
+
+$ create table movie_details(custId int, movieId int, activity int,
+genreId int, recommended string,  time string, rating string, price int, position int)
+  row format delimited
+  fields terminated by '\t'
+  stored as textfile
+  TBLPROPERTIES('serialization.null.format'='NULL');
+
+Step 3: Now load the table with the data present in /user/cloudera/hivedata/moviedetail using command and display the loaded data in table:
+
+$ load data inpath '/user/cloudera/hivedata/moviedetail' into table movie_details;
+
+$ select * from movie_details;
+
+
+Step 4: Queries
+
+ a. List all the users who  have rated the movies(Users who  rated at least one movie)
+     select custID from movie_details where rating is not NULL;
+
+  b. List all the users with max,min,average ratings they have given against any movie.
+      select custID,min(rating),max(rating),avg(rating) from movie_details group by custID,movieID;
+
+ c. List all the Movies with max,min,average ratings given by any user.
+     select movieID,min(rating),max(rating),avg(rating) from movie_details group by custID,movieID;
+
+
+
+
+
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+
+Program 5. Hive allows for the manipulation of data in HDFS using a variant of SQL. This makes it excellent for transforming and consolidating data for load into a relational database. In this exercise you will use HiveQL to filter and aggregate click data to build facts about users movie preferences. The query results will be saved in a staging table used to populate the Oracle Database.
+
+Step1: Create a text file moviedetail in the root directory, type the
+data in the file. Then move the file to the HDFS directory in path
+user/hivedata and verify the  file has been copied.
+
+$vi moviedetail
+custId          movieId         activity        genreId recommended     time                    rating  price   position
+
+1111008 1       1       5       Y       12-3-201612:12:12       Null    Null    Null
+1111119 2       4       1       N       11-2-200011:33:44       Null    Null    Null
+1212210 6       9       7       Y       04-2-200012:44:44       Null    Null    Null
+2111008 1       1       5       Y       12-3-201612:12:12       Null    Null    Null
+1511119 2       4       1       N       11-2-200011:33:44       Null    Null    Null
+1612210 6       9       7       Y       04-2-200012:44:44       Null    Null    Null
+
+
+$ hadoop fs -mkdir /user/cloudera/hivedata
+
+$ hadoop fs -put moviedetail /user/cloudera/hivedata
+
+$ hadoop fs -ls  /user/cloudera/hivedata
+
+
+Step2: Launch hive command line shell, create database moviework and  create a table.
+
+$ hive
+
+$ create database moviework;
+
+$ use moviework;
+
+$ create table movie_details(custId int, movieId int, activity int,
+genreId int, recommended string,
+  time string, rating int, price int, position int)
+  row format delimited
+  fields terminated by '\t'
+  stored as textfile;
+
+Step3: Now load the table with the data present in /user/cloudera/hivedata/moviedetail using command and display the loaded data in table:
+
+$ load data inpath '/user/cloudera/hivedata/moviedetail' into table movie_details;
+
+$ select * from movie_details;
+
+
+Step 4: create an external table(example: movieapp_log).  An external table is created for the conversion text        file to binary file which can then be sent to HSFS through the
+operating system. Avro system is used for        conversion of text file to binary file.
+
+$ CREATE EXTERNAL TABLE movieapp_logs
+  ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe'
+  STORED AS INPUTFORMAT
+'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat'
+  OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
+  tblproperties ('avro.schema.literal'='{
+  "name": "my_record",
+  "type": "record",
+  "fields": [
+   {"name":"custId", "type":"int"},    {"name":"movieId", "type":"int"},
+   {"name":"activity", "type":"int"},
+   {"name":"genereId", "type":"int"},    {"name":"recommended",
+"type":"string"},
+   {"name":"time", "type":"string"},
+   {"name":"rating","type":["int","null"],"default":"null"},
+   {"name":"price","type":["int","null"],"default":"null"},
+   {"name":"position","type":["int","null"],"default":"null"} ]}');
+
+
+Step 5: Now insert the details of internally created table(movie_details) using insert overwrite command
+       to the external table and view the data
+
+$ insert overwrite table movieapp_logs select * from movie_details;
+
+$ select * from movieapp_logs;
+
+
+
+Step 6: Till now we have created the tables and loaded the data into the tables. Now we are going to start        the query.
+
+
+
+Query 1: Write a query to select only those clicks which correspond to starting, browsing, completing, or
+                 purchasing movies. Use a CASE statement to transform the RECOMMENDED column into
+
+                Integers          where 'Y'          is 1 and 'N' is 0.  Also, ensure GENREID is not null.  Only
+                include the first 10 rows.
+
+$ SELECT custid,movieid,CASE WHEN genereid> 0 THEN genereid ELSE -1 END genereid,time,CASE recommended WHEN 'Y'   THEN 1 ELSE 0 END recommended,activity,price   FROM movieapp_logs
+WHERE activity IN (2,4,5,11) LIMIT 10;
+
+
+Query 2: Write a query to select the customer ID, movie ID, recommended state and most recent rating
+
+                for   each movie.
+
+
+$ SELECT m1.custid,m1.movieid,CASE WHEN m1.genereid > 0 THEN m1.genereid ELSE -1 END genereid,m1.time,CASE m1.recommended WHEN 'Y' THEN 1 ELSE 0 END
+  recommended,m1.activity,m1.rating   FROM movieapp_logs m1
+JOIN(SELECT custid,movieid,    CASE WHEN genereid> 0 THEN genereid ELSE -1 END genereid,MAX(time)
+max_time,activity FROM movieapp_logs    GROUP BY custid,movieid,genereid,activity) m2   ON ( m1.custid = m2.custid  AND m1.movieid = m2.movieid    AND m1.genereid = m2.genereid AND m1.time = m2.max_time AND m1.activity = 1 AND m2.activity = 1 ) LIMIT 15;
+
+
+Query 3: find the minimum and maximum time periods that are available in the log file
+
+$ SELECT MIN(time), MAX(time) FROM movieapp_logs;
+
+
+ 
+
+ 
+
+ 
+
+
+Program 6.The moveapp_log_json table contains an activity column. Activity
+states are as follows:
+RATE_MOVIE
+COMPLETED_MOVIE
+PAUSE_MOVIE
+START_MOVIE
+BROWSE_MOVIE
+LIST_MOVIE
+SEARCH_MOVIE
+LOGIN
+LOGOUT
+INCOMPLETE_MOVIE.
+
+1. Load the results of the previous two queries into a staging table. First, create the staging table:
+2.Next, load the results of the queries into the staging table.
+
+
+Query1: Load the results of the previous two queries into a staging table.First, create the staging table:
+
+$ CREATE TABLE movieapp_logss_stage (custId INT,movieId INT, genereId
+INT,time  STRING,recommended INT,activity INT,
+  rating INT,sales FLOAT )
+  ROW FORMAT DELIMITED
+  FIELDS TERMINATED BY '\t';
+
+Query 2:Next, load the results of the queries into the staging table:
+
+$ INSERT OVERWRITE TABLE movieapp_logs_stage SELECT * FROM (SELECT
+custid,movieid,CASE WHEN genereId> 0 THEN
+   genereId ELSE -1 END genereId, time,CAST((CASE recommended WHEN 'Y'
+THEN 1 ELSE 0 END) AS INT) recommended,
+   activity,cast(null AS INT) rating, price   FROM movieapp_logs
+WHERE activity IN (2,4,5,11)
+   UNION ALL SELECT  m1.custid,m1.movieid,CASE WHEN m1.genereId > 0
+THEN m1.genereId ELSE -1 END genereId,m1.time,
+   CAST((CASE m1.recommended WHEN 'Y' THEN 1 ELSE 0 END) AS INT)
+recommended,m1.activity, m1.rating,
+   cast(null as float) price   FROM movieapp_logs m1 JOIN (SELECT
+custid,movieid,CASE WHEN genereId> 0 THEN
+   genereId ELSE -1 END genereId,MAX(time) max_time,activity FROM
+movieapp_logs GROUP BY custid, movieid, genereId,
+   activity) m2   ON ( m1.custid  = m2.custid AND m1.movieid =
+m2.movieid     AND m1.genereId = m2.genereId
+   AND m1.time = m2.max_time     AND m1.activity = 1     AND
+m2.activity = 1     ) ) union_result;
+
+
+Query 3: View the staging table.
+
+$ select * from movieapp_logs_stage;
